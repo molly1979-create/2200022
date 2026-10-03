@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品選購與結帳付款</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "DFKai-SB", "BiauKai", "標楷體", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, serif;
+      background-color: #f7f9fa;
+      color: #222;
+      padding: 40px 20px 100px 20px;
+      font-size: 16px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .header-title {
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+      border-bottom: 2px solid #0d5940;
+      color: #0d5940;
+    }
+
+    /* 頁面切換控制 */
+    .page-section {
+      display: block;
+    }
+    .page-section.hidden {
+      display: none;
+    }
+
+    /* ================= 商品列表樣式 ================= */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .card {
+      background: #ffffff;
+      border: 1.5px solid #d1d5db;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    }
+    .image-box {
+      position: relative;
+      background-color: #eef4f1;
+      height: 290px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .image-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .badge-discount {
+      position: absolute;
+      top: 14px;
+      left: 0;
+      background-color: #0d5940;
+      color: #ffffff;
+      padding: 8px 16px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 0 20px 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .badge-discount .original {
+      font-size: 13px;
+      font-weight: normal;
+      opacity: 0.9;
+      margin-left: 4px;
+      text-decoration: line-through;
+    }
+    .card-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: space-between;
+    }
+    .product-title {
+      font-size: 20px;
+      font-weight: bold;
+      line-height: 1.5;
+      color: #111827;
+      margin-bottom: 10px;
+    }
+    .product-desc {
+      font-size: 16px;
+      line-height: 1.7;
+      color: #374151;
+      margin-bottom: 16px;
+      text-align: justify;
+    }
+    .tags {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tag {
+      font-size: 14px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .tag-temp {
+      background-color: #d97706;
+      color: #fff;
+    }
+    .tag-pickup {
+      background-color: #4b5563;
+      color: #fff;
+    }
+    .price-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+    .price {
+      font-size: 24px;
+      font-weight: bold;
+      color: #dc2626;
+    }
+
+    /* 加減數量控制項（按鍵放大好點選） */
+    .quantity-control {
+      display: flex;
+      align-items: center;
+      border: 2px solid #9ca3af;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .quantity-btn {
+      background-color: #f3f4f6;
+      border: none;
+      width: 44px;
+      height: 44px;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s;
+      font-family: inherit;
+    }
+    .quantity-btn:hover {
+      background-color: #e5e7eb;
+    }
+    .quantity-input {
+      flex: 1;
+      border: none;
+      padding: 8px 0;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      outline: none;
+      width: 100%;
+      -moz-appearance: textfield;
+      font-family: inherit;
+    }
+    .quantity-input::-webkit-outer-spin-button,
+    .quantity-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    /* 懸浮購物車按鈕 */
+    .cart-float-btn {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      background-color: #0d5940;
+      color: #ffffff;
+      border: none;
+      border-radius: 50px;
+      padding: 16px 26px;
+      font-size: 19px;
+      font-weight: bold;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    .cart-float-btn:hover {
+      background-color: #09402e;
+      transform: scale(1.05);
+    }
+    .cart-badge {
+      background-color: #dc2626;
+      color: #ffffff;
+      border-radius: 50%;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    /* 購物車 Modal */
+    .cart-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1001;
+    }
+    .cart-modal {
+      background-color: #ffffff;
+      width: 92%;
+      max-width: 680px;
+      max-height: 85vh;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    }
+    .cart-modal-header {
+      padding: 20px 24px;
+      border-bottom: 2px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cart-modal-header h3 {
+      font-size: 24px;
+      color: #111827;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 28px;
+      color: #6b7280;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-family: inherit;
+    }
+    .close-btn:hover {
+      color: #111827;
+    }
+    .cart-modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .cart-empty {
+      text-align: center;
+      color: #6b7280;
+      padding: 48px 0;
+      font-size: 18px;
+    }
+    .cart-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid #e5e7eb;
+      gap: 12px;
+    }
+    .cart-item-info {
+      flex: 2;
+    }
+    .cart-item-name {
+      font-size: 17px;
+      font-weight: bold;
+      color: #1f2937;
+      line-height: 1.4;
+    }
+    .cart-item-unit-price {
+      font-size: 15px;
+      color: #4b5563;
+      margin-top: 4px;
+    }
+    .cart-item-qty {
+      flex: 1;
+      max-width: 120px;
+    }
+    .cart-item-subtotal {
+      flex: 1;
+      text-align: right;
+      font-size: 18px;
+      font-weight: bold;
+      color: #dc2626;
+    }
+    .cart-item-delete {
+      background: none;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 6px;
+    }
+    .cart-item-delete:hover {
+      color: #dc2626;
+    }
+    .cart-modal-footer {
+      padding: 20px 24px;
+      border-top: 2px solid #e5e7eb;
+      background-color: #fafafa;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .cart-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .cart-total-price {
+      font-size: 26px;
+      color: #dc2626;
+    }
+    .checkout-btn {
+      background-color: #0d5940;
+      color: #fff;
+      border: none;
+      padding: 14px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      font-family: inherit;
+    }
+    .checkout-btn:hover {
+      background-color: #09402e;
+    }
+
+    /* ================= 結帳付款頁面樣式 ================= */
+    .checkout-container {
+      max-width: 740px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 34px 28px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    }
+    .checkout-container h2 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid #0d5940;
+      color: #0d5940;
+    }
+    .order-summary {
+      background-color: #f9fafb;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 26px;
+    }
+    .summary-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 14px;
+      border-bottom: 1px dashed #9ca3af;
+      padding-bottom: 10px;
+    }
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 17px;
+      line-height: 1.5;
+    }
+    .order-total {
+      text-align: right;
+      font-size: 22px;
+      font-weight: bold;
+      color: #dc2626;
+      margin-top: 14px;
+      border-top: 1.5px solid #d1d5db;
+      padding-top: 12px;
+    }
+    .section-title {
+      font-size: 21px;
+      font-weight: bold;
+      margin-bottom: 18px;
+      color: #1f2937;
+    }
+    .payment-option {
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background-color: #fff;
+    }
+    .payment-option:hover {
+      border-color: #0d5940;
+      background-color: #f0fdf4;
+    }
+    .payment-option.active {
+      border-color: #0d5940;
+      background-color: #f0fdf4;
+      box-shadow: 0 0 0 2px #0d5940;
+    }
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .radio-label input[type="radio"] {
+      width: 20px;
+      height: 20px;
+    }
+    .bank-details {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      background-color: #fff;
+      border: 1.5px dashed #0d5940;
+      border-radius: 6px;
+      font-size: 17px;
+      line-height: 1.9;
+      color: #1f2937;
+    }
+    .btn-submit {
+      width: 100%;
+      background-color: #0d5940;
+      color: #fff;
+      border: none;
+      padding: 16px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 12px;
+      font-family: inherit;
+    }
+    .btn-submit:hover {
+      background-color: #09402e;
+    }
+    .btn-back {
+      width: 100%;
+      background-color: #e5e7eb;
+      color: #374151;
+      border: none;
+      padding: 14px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 12px;
+      font-family: inherit;
+    }
+    .btn-back:hover {
+      background-color: #d1d5db;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= 第一頁：商品列表 ================= -->
+  <div id="shopPage" class="page-section">
+    <div class="container">
+      <div class="header-title">請選擇商品</div>
+
+      <div class="product-grid">
+
+        <!-- 商品 1：灰雲朵多功能手提包 -->
+        <div class="card" data-id="p1" data-name="灰雲朵多功能手提包" data-price="600">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$600 <span class="original">(原價$850)</span></div>
+            <img src="https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=500&q=80" alt="灰雲朵多功能手提包">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">灰雲朵多功能手提包<br>灰色多功能收納托特包</div>
+              <p class="product-desc">像把天空中最輕軟的一朵雲拎在手裡！蓬鬆立體絎縫設計，溫柔知性又充滿法式優雅。百搭灰色調無論上班或週末喝咖啡隨手一拎立刻顯氣質，大容量多隔層完美兼顧實用性，絕對是日常本命包！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">600元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 2：黑雲朵多功能筆記本包 -->
+        <div class="card" data-id="p2" data-name="黑雲朵多功能筆記本包" data-price="600">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$600 <span class="original">(原價$850)</span></div>
+            <img src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80" alt="黑雲朵多功能筆記本包">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">黑雲朵多功能<br>筆記本包黑色多功能收納托特包</div>
+              <p class="product-desc">保護筆電也能時髦得毫不費力！沉穩俐落的經典純黑，揉合空氣感立體剪裁，厚實包體給筆電最安心的溫柔呵護。夾在腋下或手提都散發滿滿精英氣場，俐落現代上班族人手必備！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">600元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 3：粉紅色女神搖搖杯 -->
+        <div class="card" data-id="p3" data-name="粉紅色女神搖搖杯" data-price="550">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$550 <span class="original">(原價$850)</span></div>
+            <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=80" alt="粉紅色女神搖搖杯">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">粉紅色女神搖搖杯<br>粉紅色搖搖杯</div>
+              <p class="product-desc">看到這抹甜而不膩的粉嫩色調，連喝水都變得好幸福！圓潤流線瓶身超顯氣質，專為日常補水與運動搖飲設計，輕輕一搖均勻順口，握感極佳不滑手，每一次補水都是滿滿的儀式感！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">550元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 4：奶茶色女神搖搖杯 -->
+        <div class="card" data-id="p4" data-name="奶茶色女神搖搖杯" data-price="550">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$550 <span class="original">(原價$850)</span></div>
+            <img src="https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=500&q=80" alt="奶茶色女神搖搖杯">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">奶茶色女神搖搖杯<br>米色搖搖杯</div>
+              <p class="product-desc">這就是傳說中高級感拉滿的燕麥奶茶色！極簡溫潤的大地色系，擺在辦公桌或健身房都像極具品味的藝術品。密封防漏好攜帶，低調內斂卻美得讓人移不開眼，奶茶控絕對要收藏！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">550元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 5：經典黑保溫隨行杯 -->
+        <div class="card" data-id="p5" data-name="經典黑保溫隨行杯" data-price="680">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$680 <span class="original">(原價$980)</span></div>
+            <img src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80" alt="經典黑保溫隨行杯">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">經典黑保溫隨行杯<br>雙層真空不鏽鋼隨行保溫瓶</div>
+              <p class="product-desc">帥氣俐落，完全寫著質感二字！霧面純黑外型搭配雙層真空不鏽鋼硬實力，長效鎖住冰熱風味。無論早晨熱美式或午後冰萃，隨握隨飲超順手，極簡洗鍊的現代美學必備！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">680元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 6：薄荷綠陶瓷吸管杯 -->
+        <div class="card" data-id="p6" data-name="薄荷綠陶瓷吸管杯" data-price="480">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$480 <span class="original">(原價$650)</span></div>
+            <img src="https://images.unsplash.com/photo-1556742049-0a67c5574f73?auto=format&fit=crop&w=500&q=80" alt="薄荷綠陶瓷吸管杯">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">薄荷綠陶瓷吸管杯<br>大容量磨砂防漏陶瓷塗層隨行杯</div>
+              <p class="product-desc">一眼透心涼！清爽療癒的薄荷綠搭配親膚磨砂手感，光看就心情放晴。升級陶瓷內膽不留異味、不挑飲品，果醋、拿鐵皆可裝；大口徑加專用吸管，隨手暢飲超自在！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">480元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 7：燕麥白皮革零錢包 -->
+        <div class="card" data-id="p7" data-name="燕麥白皮革零錢包" data-price="390">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$390 <span class="original">(原價$520)</span></div>
+            <img src="https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=500&q=80" alt="燕麥白皮革零錢包">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">燕麥白皮革零錢包<br>簡約質感隨身卡包收納袋</div>
+              <p class="product-desc">細膩溫潤的皮質觸感，一摸就淪陷！溫柔燕麥白簡約典雅，小巧身形能整齊收納卡片零錢，放進隨身小包零負擔。每次掏出結帳都散發著滿滿精緻生活的儀式感！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">390元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 8：工裝機能多耐磨斜背包 -->
+        <div class="card" data-id="p8" data-name="工裝機能多耐磨斜背包" data-price="780">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$780 <span class="original">(原價$1,080)</span></div>
+            <img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=500&q=80" alt="工裝機能多耐磨斜背包">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">工裝機能多耐磨斜背包<br>防潑水抗撕裂山系機能隨身小包</div>
+              <p class="product-desc">戶外山系與城市潮流的完美交融！高密度防潑水、抗撕裂耐磨布料無懼風雨，多層次隔層收納井然有序。輕量俐落、背上身酷帥有型，是探險與出街的最強夥伴！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">780元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 9：極簡磁吸編織掛繩手機夾片組 -->
+        <div class="card" data-id="p9" data-name="極簡磁吸編織掛繩手機夾片組" data-price="420">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$420 <span class="original">(原價$590)</span></div>
+            <img src="https://images.unsplash.com/photo-1586105251261-72a756497a11?auto=format&fit=crop&w=500&q=80" alt="極簡磁吸編織掛繩手機夾片組">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">極簡磁吸編織掛繩手機夾片組<br>可調節式加粗傘繩多色隨行背帶</div>
+              <p class="product-desc">徹底解放雙手，時髦精出門必備！加粗編織傘繩扎實舒適不勒頸，高承重夾片穩固不擋充電孔。拍照、刷載具隨拿隨用，不再慌張掏包，掛上身就是最潮穿搭配件！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">420元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 10：霧面純鈦輕量雙層保溫杯 -->
+        <div class="card" data-id="p10" data-name="霧面純鈦輕量雙層保溫杯" data-price="990">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$990 <span class="original">(原價$1,380)</span></div>
+            <img src="https://images.unsplash.com/photo-1570572866596-1b935e40a020?auto=format&fit=crop&w=500&q=80" alt="霧面純鈦輕量雙層保溫杯">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">霧面純鈦輕量雙層保溫杯<br>超輕耐酸鹼抗腐蝕戶外咖啡杯</div>
+              <p class="product-desc">顛覆想像的羽量級輕盈！頂級純鈦工藝耐酸鹼不生鏽，還原飲品最真實純粹的原始風味。雙層真空鎖溫配上低調金屬霧面光澤，絕對是值得入手犒賞自己的品味重裝！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">990元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 11：木質調便攜固體香膏 -->
+        <div class="card" data-id="p11" data-name="木質調便攜固體香膏" data-price="450">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$450 <span class="original">(原價$620)</span></div>
+            <img src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=500&q=80" alt="木質調便攜固體香膏">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">木質調便攜固體香膏<br>雪松冷杉植物萃取隨身鋁盒香膏</div>
+              <p class="product-desc">像漫步在清晨的雪松森林！精緻鋁盒輕輕推開，即釋放冷杉與溫潤木質的療癒香氣。膏體溫潤貼膚，散發若有似無的高級偽體香，小巧便攜，隨身裝下一整天的優雅沉靜！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">450元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品 12：復古水洗帆布摺疊收納托特包 -->
+        <div class="card" data-id="p12" data-name="復古水洗帆布摺疊收納托特包" data-price="520">
+          <div class="image-box">
+            <div class="badge-discount">優惠價$520 <span class="original">(原價$750)</span></div>
+            <img src="https://images.unsplash.com/photo-1597484661643-2f5fef640dd1?auto=format&fit=crop&w=500&q=80" alt="復古水洗帆布摺疊收納托特包">
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="product-title">復古水洗帆布摺疊收納托特包<br>大容量寬肩帶日常便攜手提購物袋</div>
+              <p class="product-desc">越用越有韻味的水洗工藝！厚磅純棉帆布質樸耐磨，大容量配合加寬減壓背帶，裝入筆電或採買書籍都游刃有餘；可摺疊收納好攜帶，隨性一背就是慵懶文藝範！</p>
+            </div>
+            <div>
+              <div class="tags">
+                <span class="tag tag-temp">常溫</span>
+                <span class="tag tag-pickup">店取</span>
+              </div>
+              <div class="price-row">
+                <span class="price">520元</span>
+              </div>
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn btn-minus">-</button>
+                <input type="number" class="quantity-input" min="0" value="0">
+                <button type="button" class="quantity-btn btn-plus">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 懸浮購物車按鈕 -->
+    <button type="button" class="cart-float-btn" id="openCartBtn">
+      <span>🛒 購物車明細</span>
+      <span class="cart-badge" id="cartTotalCount">0</span>
+    </button>
+  </div>
+
+  <!-- 購物車確認明細彈窗 (Modal) -->
+  <div class="cart-modal-overlay" id="cartModal">
+    <div class="cart-modal">
+      <div class="cart-modal-header">
+        <h3>🛒 購物清單明細</h3>
+        <button type="button" class="close-btn" id="closeCartBtn">✕</button>
+      </div>
+      <div class="cart-modal-body" id="cartItemsContainer">
+        <!-- 動態渲染購物車清單 -->
+      </div>
+      <div class="cart-modal-footer">
+        <div class="cart-total-row">
+          <span>總計金額</span>
+          <span class="cart-total-price" id="cartTotalPrice">NT$ 0</span>
+        </div>
+        <button type="button" class="checkout-btn" id="goToCheckoutBtn">前往結帳</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 第二頁：訂單結帳與付款 ================= -->
+  <div id="checkoutPage" class="page-section hidden">
+    <div class="checkout-container">
+      <h2>訂單結帳與付款</h2>
+
+      <!-- 訂單明細 -->
+      <div class="order-summary">
+        <div class="summary-title">結帳明細</div>
+        <div id="orderItemsContainer"></div>
+        <div class="order-total" id="orderTotalText">總計金額：0 元</div>
+      </div>
+
+      <!-- 付款方式選擇 -->
+      <div class="section-title">請選擇付款方式</div>
+
+      <!-- 選項 1：銀行匯款 -->
+      <div class="payment-option" id="opt-bank" onclick="selectPayment('bank')">
+        <label class="radio-label">
+          <input type="radio" name="payment" value="bank">
+          <span>1. 銀行匯款 (ATM 轉帳)</span>
+        </label>
+        <div class="bank-details" id="bankInfo">
+          📌 <strong>匯款資訊</strong><br>
+          銀行名稱：812 台新銀行<br>
+          匯款帳號：<strong>123456789</strong><br>
+          <span style="color:#4b5563; font-size:15px;">※ 匯款完成後請保留明細以供核對。</span>
+        </div>
+      </div>
+
+      <!-- 選項 2：街口支付 -->
+      <div class="payment-option" id="opt-jko" onclick="selectPayment('jko')">
+        <label class="radio-label">
+          <input type="radio" name="payment" value="jko">
+          <span>2. 街口支付（自動開啟官方付款頁面）</span>
+        </label>
+      </div>
+
+      <!-- 選項 3：LINE PAY -->
+      <div class="payment-option" id="opt-line" onclick="selectPayment('line')">
+        <label class="radio-label">
+          <input type="radio" name="payment" value="line">
+          <span>3. LINE Pay（自動開啟官方付款頁面）</span>
+        </label>
+      </div>
+
+      <button type="button" class="btn-submit" onclick="submitOrder()">確認送出訂單</button>
+      <button type="button" class="btn-back" id="backToShopBtn">返回修改商品</button>
+    </div>
+  </div>
+
+  <script>
+    // ================= 購物車狀態與管理 =================
+    const cartState = {};
+
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+      const id = card.getAttribute('data-id');
+      const name = card.getAttribute('data-name');
+      const price = parseInt(card.getAttribute('data-price'), 10);
+      const input = card.querySelector('.quantity-input');
+      const minusBtn = card.querySelector('.btn-minus');
+      const plusBtn = card.querySelector('.btn-plus');
+
+      cartState[id] = { name, price, qty: 0, inputElem: input };
+
+      minusBtn.addEventListener('click', () => {
+        if (cartState[id].qty > 0) {
+          cartState[id].qty--;
+          input.value = cartState[id].qty;
+          updateCartView();
+        }
+      });
+
+      plusBtn.addEventListener('click', () => {
+        cartState[id].qty++;
+        input.value = cartState[id].qty;
+        updateCartView();
+      });
+
+      input.addEventListener('change', () => {
+        let val = parseInt(input.value, 10);
+        if (isNaN(val) || val < 0) val = 0;
+        cartState[id].qty = val;
+        input.value = val;
+        updateCartView();
+      });
+    });
+
+    function updateCartView() {
+      let totalCount = 0;
+      let totalPrice = 0;
+      const itemsContainer = document.getElementById('cartItemsContainer');
+      itemsContainer.innerHTML = '';
+
+      const itemsInCart = Object.entries(cartState).filter(([_, item]) => item.qty > 0);
+
+      itemsInCart.forEach(([id, item]) => {
+        totalCount += item.qty;
+        totalPrice += item.qty * item.price;
+
+        const itemRow = document.createElement('div');
+        itemRow.className = 'cart-item';
+        itemRow.innerHTML = `
+          <div class="cart-item-info">
+            <div class="cart-item-name">${item.name}</div>
+            <div class="cart-item-unit-price">單價：${item.price} 元</div>
+          </div>
+          <div class="cart-item-qty">
+            <div class="quantity-control">
+              <button type="button" class="quantity-btn modal-minus" data-id="${id}">-</button>
+              <input type="number" class="quantity-input modal-input" data-id="${id}" min="0" value="${item.qty}">
+              <button type="button" class="quantity-btn modal-plus" data-id="${id}">+</button>
+            </div>
+          </div>
+          <div class="cart-item-subtotal">${item.qty * item.price} 元</div>
+          <button type="button" class="cart-item-delete" data-id="${id}" title="移除">✕</button>
+        `;
+        itemsContainer.appendChild(itemRow);
+      });
+
+      if (itemsInCart.length === 0) {
+        itemsContainer.innerHTML = '<div class="cart-empty">尚未選購任何商品</div>';
+      }
+
+      document.getElementById('cartTotalCount').innerText = totalCount;
+      document.getElementById('cartTotalPrice').innerText = `NT$ ${totalPrice}`;
+
+      bindModalEvents();
+    }
+
+    function bindModalEvents() {
+      document.querySelectorAll('.modal-minus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          if (cartState[id].qty > 0) {
+            cartState[id].qty--;
+            cartState[id].inputElem.value = cartState[id].qty;
+            updateCartView();
+          }
+        });
+      });
+
+      document.querySelectorAll('.modal-plus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          cartState[id].qty++;
+          cartState[id].inputElem.value = cartState[id].qty;
+          updateCartView();
+        });
+      });
+
+      document.querySelectorAll('.modal-input').forEach(input => {
+        input.addEventListener('change', () => {
+          const id = input.getAttribute('data-id');
+          let val = parseInt(input.value, 10);
+          if (isNaN(val) || val < 0) val = 0;
+          cartState[id].qty = val;
+          cartState[id].inputElem.value = val;
+          updateCartView();
+        });
+      });
+
+      document.querySelectorAll('.cart-item-delete').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          cartState[id].qty = 0;
+          cartState[id].inputElem.value = 0;
+          updateCartView();
+        });
+      });
+    }
+
+    // Modal 控制
+    const cartModal = document.getElementById('cartModal');
+    document.getElementById('openCartBtn').addEventListener('click', () => {
+      cartModal.style.display = 'flex';
+    });
+    document.getElementById('closeCartBtn').addEventListener('click', () => {
+      cartModal.style.display = 'none';
+    });
+    cartModal.addEventListener('click', (e) => {
+      if (e.target === cartModal) cartModal.style.display = 'none';
+    });
+
+    // ================= 頁面切換與結帳邏輯 =================
+    const shopPage = document.getElementById('shopPage');
+    const checkoutPage = document.getElementById('checkoutPage');
+
+    document.getElementById('goToCheckoutBtn').addEventListener('click', () => {
+      const itemsInCart = Object.entries(cartState).filter(([_, item]) => item.qty > 0);
+      if (itemsInCart.length === 0) {
+        alert('購物車目前是空的，請先挑選商品！');
+        return;
+      }
+
+      cartModal.style.display = 'none';
+      shopPage.classList.add('hidden');
+      checkoutPage.classList.remove('hidden');
+      window.scrollTo(0, 0);
+
+      renderCheckoutSummary();
+    });
+
+    document.getElementById('backToShopBtn').addEventListener('click', () => {
+      checkoutPage.classList.add('hidden');
+      shopPage.classList.remove('hidden');
+      window.scrollTo(0, 0);
+    });
+
+    function renderCheckoutSummary() {
+      const orderContainer = document.getElementById('orderItemsContainer');
+      orderContainer.innerHTML = '';
+      let grandTotal = 0;
+
+      const itemsInCart = Object.entries(cartState).filter(([_, item]) => item.qty > 0);
+
+      itemsInCart.forEach(([id, item]) => {
+        const subtotal = item.qty * item.price;
+        grandTotal += subtotal;
+
+        const row = document.createElement('div');
+        row.className = 'order-item';
+        row.innerHTML = `
+          <span>${item.name} × ${item.qty}</span>
+          <span>${subtotal} 元</span>
+        `;
+        orderContainer.appendChild(row);
+      });
+
+      document.getElementById('orderTotalText').innerText = `總計金額：${grandTotal} 元`;
+    }
+
+    // ================= 付款方式控制 =================
+    let currentMethod = '';
+
+    function selectPayment(method) {
+      currentMethod = method;
+      document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('active'));
+      const activeCard = document.getElementById(`opt-${method}`);
+      if (activeCard) {
+        activeCard.classList.add('active');
+        activeCard.querySelector('input[type="radio"]').checked = true;
+      }
+
+      const bankInfo = document.getElementById('bankInfo');
+
+      if (method === 'bank') {
+        bankInfo.style.display = 'block';
+      } else {
+        bankInfo.style.display = 'none';
+        if (method === 'jko') {
+          window.open('https://www.jkopay.com/', '_blank');
+        } else if (method === 'line') {
+          window.open('https://pay.line.me/tw/', '_blank');
+        }
+      }
+    }
+
+    function submitOrder() {
+      if (!currentMethod) {
+        alert('請先點選一種付款方式！');
+        return;
+      }
+      if (currentMethod === 'bank') {
+        alert('感謝訂購！請於 24 小時內完成匯款至 台新銀行 (812) 123456789。');
+      } else {
+        alert('已為您開啟付款頁面，完成付款後將由專人為您安排出貨！');
+      }
+    }
+
+    updateCartView();
+  </script>
+
+</body>
+</html>
